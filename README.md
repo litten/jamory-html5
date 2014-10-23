@@ -12,4 +12,4 @@ APP的设计，交互，规则都极尽简洁。
 目前暂提供安卓版本：        
 
 ![扫描二维码下载](http://littendomo.sinaapp.com/japanese-syllabary/qrcode.png)        
-或点击此(链接)[http://littendomo.sinaapp.com/japanese-syllabary/japanese-syllabary.apk]下载。
+或点击此(http://littendomo.sinaapp.com/japanese-syllabary/japanese-syllabary.apk)[链接]下载。

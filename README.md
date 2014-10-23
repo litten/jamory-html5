@@ -6,7 +6,7 @@
 
 APP的设计，交互，规则都极尽简洁。
 
-![UI](http://littendomo.sinaapp.com/japanese-syllabary/japanese-syllabary.png)        
+![UI](http://littendomo.sinaapp.com/japanese-syllabary/main.png)        
 ### 安装
 
 目前暂提供安卓版本：        

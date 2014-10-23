@@ -65,11 +65,18 @@ var Main = (function(){
 
 	var Score = {
 		key: "score",
+		bestKey: "best",
 		add: function(){
 			var curScore = window.localStorage.getItem(this.key);
 			var nowScore = parseInt(curScore)+1;
 			$("score").innerHTML = nowScore;
 			window.localStorage.setItem(this.key, nowScore);
+			//更新最高分数
+			var bestScore = parseInt($("best-val").innerHTML);
+			if(nowScore > bestScore){
+				$("best-val").innerHTML = nowScore;
+				window.localStorage.setItem(this.bestKey, nowScore);
+			}
 		},
 		clear: function(){
 			window.localStorage.setItem(this.key, 0);
@@ -77,7 +84,11 @@ var Main = (function(){
 		},
 		init: function(){
 			var curScore = window.localStorage.getItem(this.key) || 0;
+			var curBest = window.localStorage.getItem(this.bestKey) || 0;
+			if(typeof(curScore) != "number") curScore = 0;
+			if(typeof(curBest) != "number") curBest = 0;
 			$("score").innerHTML = curScore;
+			$("best-val").innerHTML = curBest;
 		}
 	}
 
@@ -264,6 +275,8 @@ var Main = (function(){
 	
 
 	function init(){
+		//使active伪类生效
+		document.addEventListener('touchstart',function(){},false);
 		setVal();
 		bind();
 		preload(["audio/err.mp3","audio/right.mp3"]);

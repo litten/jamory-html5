@@ -1,3 +1,308 @@
+var db = (function(){
+	var _this = window;
+
+	return {
+		DB: null,
+
+		dbConnect : function(dbName,dbVersion,dbDesc,dbSize){
+          	
+	        try {
+	            if (!window.openDatabase) {
+	                console.log('Databases are not supported in this browser.');
+	                return false;
+	            } else {
+	                dbName      = dbName ? dbName : 'SHICAI_APP';
+	                dbVersion   = dbVersion ? dbVersion : '1.0';
+	                dbDesc      = dbDesc ? dbDesc : 'SHICAI_DB for User Mobile';
+	                dbSize      = dbSize ? dbSize : (2 * 1024 * 1024);
+	                  
+	                _this.DB = openDatabase(dbName, dbVersion, dbDesc, dbSize);
+	                  
+	                return true;
+	            }
+	        } catch(e) {
+	            if (e == 2) {
+	                console.log("Invalid database version.");
+	            } else {
+	                console.log("Unknown error "+e+".");
+	            }
+	            return false;
+	        }
+	          
+	    },
+	    /**
+	     * 创建表
+	     * @param {String} tableName
+	     * @param {Object} tableField
+	     */
+	    dbDefineTable : function(tableName,tableField){
+	        if(!tableName || !tableField){
+	            console.log('ERROR: Function "dbCreateTable" tableName or tableField is NULL.');
+	        }
+	        var fieldArr = [];
+	        var fieldItem;
+	        var i = 0;
+	          
+	        for (var field in tableField){
+	            field.toString();
+	            tableField[field].toString();
+	            //fieldArr[i] = field+' '+tableField[field];
+	            fieldArr[i] = field;
+	            i++;
+	        }
+	        fieldItem = fieldArr.join(",").toString();
+	          
+	        var SQL = 'CREATE TABLE IF NOT EXISTS '+tableName+' (';
+	        SQL += fieldItem;
+	        SQL +=')';
+	        console.log(SQL);
+	          
+	        _this.DB.transaction(function(tx){
+	            tx.executeSql(SQL,[],function(tx,result){
+	                return true;
+	            },function(tx,error){
+	                console.log(error);
+	                return false;
+	            });
+	        });
+	    },
+	      
+	    /**
+	     * 插入数据
+	     * @param {String} tableName
+	     * @param {Object} tableField
+	     * @param {Function} funName
+	     */
+	    dbInsert : function(tableName,tableField,funName){
+	      
+	        if(!tableField){
+	            console.log('ERROR: FUNCTION dbInsert tableField is NULL');
+	            return false;
+	        }
+	          
+	        var fieldKeyArr = [];
+	        var fieldValueArr = [];
+	        var fieldKey;
+	        var fieldValue;
+	        var i = 0;
+	          
+	        for (var field in tableField){
+	          
+	            field.toString();
+	            tableField[field].toString();
+	            fieldKeyArr[i] = field;
+	            fieldValueArr[i] = tableField[field];
+	            if(typeof(fieldValueArr[i]) !== 'number'){
+	                fieldValueArr[i] = '"'+fieldValueArr[i]+'"';
+	            }
+	            i++;
+	        }
+	        fieldKey = fieldKeyArr.join(",");
+	        fieldValue = fieldValueArr.join(",");
+	  
+	        var SQL = 'INSERT INTO '+tableName+' (';
+	        SQL += fieldKey;
+	        SQL += ') ';
+	        SQL += 'VALUES (';
+	        SQL += fieldValue;
+	        SQL += ')';
+	        console.log(SQL);
+	          
+	        _this.DB.transaction(function(tx){
+	            tx.executeSql(SQL,[],function(tx,result){
+	                return true;
+	            },function(tx,error){
+	                console.log(error);
+	                return false;
+	            });
+	        });
+	    },
+	      
+	    /**
+	     * 查询所有结果
+	     * @param {String}  tableName
+	     * @param {Function} funName
+	     * @param {Object}  tableField
+	     * @param {Object}  dbParams
+	     */
+	    dbFindAll : function(tableName,funName,funErr,tableField,dbParams){
+	  
+	        tableField = tableField ? tableField : '*';
+	        if(!tableName || !funName){
+	            console.log('ERROR: Function "dbFindAll" tableName or funName is NULL.');
+	        }
+	          
+	        var SQL = '';
+	        SQL +='SELECT '+tableField+' FROM '+tableName;
+	        
+	        console.log(SQL);
+
+	        _this.DB.transaction(function(tx){
+	            tx.executeSql(SQL,[],_findSuccess,function(tx,error){
+	                funErr && funErr(error);
+	                return false;
+	            });
+	        });
+	        
+	        function _findSuccess(tx,result){
+	            funName(result);
+	        }
+	  
+	    },
+	      
+	    /**
+	     * 删除数据
+	     * @param {String}  tableName
+	     * @param {Object}  dbParams
+	     * @param {Function} funName
+	     */
+	    dbDelete : function(tableName,dbParams,funName){
+	      
+	        if(!tableName || !dbParams){
+	            console.log('ERROR: FUNCTION "dbDelete" tableName or dbParams is NULL');
+	            return false;
+	        }
+	        var SQL = '';
+	        SQL +='DELETE FROM '+tableName+' WHERE ';
+	          
+	        var paramArr = new Array();
+	        var paramStr = '';
+	        var i=0;
+	        for(var k in dbParams){
+	            if(typeof(dbParams[k]) !== 'number'){
+	                dbParams[k] = '"'+dbParams[k]+'"';
+	            }
+	            paramArr[i] = k.toString()+'='+dbParams[k];
+	            i++;
+	        }
+	        paramStr = paramArr.join(" AND ");
+	        SQL += paramStr;
+	          
+	        _this.DB.transaction(function(tx){
+	                tx.executeSql(SQL);
+	            },[],function(tx,result){
+	                funName(result);
+	            },function(tx,error){
+	                console.log(error);
+	                return false;
+	            });
+	        console.log(SQL);
+	    },
+	      
+	    /**
+	     * 更新数据表
+	     * @param {String}  *tableName
+	     * @param {Object}  *dbParams
+	     * @param {Object}  *dbWhere
+	     * @param {Function} funName
+	     */
+	    dbUpdate : function(tableName,dbParams,dbWhere,funName){
+	  
+	        var SQL = 'UPDATE '+tableName+' SET ';
+	        var paramArr = new Array();
+	        var paramStr = '';
+	        var i=0;
+	        for(var k in dbParams){
+	            if(typeof(dbParams[k]) !== 'number'){
+	                dbParams[k] = '"'+dbParams[k]+'"';
+	            }
+	            paramArr[i] = k.toString()+'='+dbParams[k];
+	            i++;
+	        }
+	        paramStr = paramArr.join(" , ");
+	          
+	        SQL += paramStr;
+
+	        if(dbWhere){
+	        	SQL += ' WHERE ';
+	          
+		        var whereArr = new Array();
+		        var whereStr = '';
+		        var n=0;
+		        for(var w in dbWhere){
+		              
+		            if(typeof(dbWhere[w]) !=='number'){
+		                dbWhere[n] = '"'+dbWhere[w]+'"';
+		            }
+		            whereArr[n] = w.toString()+'='+dbWhere[w];
+		            n++;
+		        }
+		          
+		        whereStr = whereArr.join(" AND ");
+		          
+		        SQL += whereStr;
+	        }
+	        
+	          
+	        console.log(SQL);
+	        _this.DB.transaction(function(tx){
+	            tx.executeSql(SQL,[],function(tx,result){
+	                return true;
+	            },function(tx,error){
+	                console.log(error);
+	                return false;
+	            });
+	        });
+	        console.log(SQL);
+	          
+	    },
+	      
+	    /**
+	     * 清空数据表
+	     * @param {String} tableName
+	     * @return {Boolean}
+	     */
+	    dbTruncate : function(tableName){
+	      
+	        if(!tableName){
+	            console.log('ERROR:Table Name is NULL');
+	            return false;
+	        }
+	          
+	        function _TRUNCATE(tableName){
+	            _this.DB.transaction(function(tx){
+	                tx.executeSql('DELETE TABLE '+tableName);
+	            },[],function(tx,result){
+	                console.log('DELETE TABLE '+tableName);
+	                return true;
+	            },function(tx,error){
+	                console.log(error);
+	                return false;
+	            })
+	        }
+	          
+	        _TRUNCATE(tableName);
+	    },
+	      
+	    /**
+	     * @desc 删除数据表
+	     * @param {String} tableName
+	     * @return {Boolean}
+	     */
+	    dbDrop : function(tableName){
+	          
+	        if(!tableName){
+	            console.log('ERROR:Table Name is NULL');
+	            return false;
+	        }
+	          
+	        function _DROP(tableName){
+	            _this.DB.transaction(function(tx){
+	                tx.executeSql('DROP TABLE '+tableName);
+	            },[],function(tx,result){
+	                console.log('DROP TABLE '+tableName);
+	                return true;
+	            },function(tx,error){
+	                console.log(error);
+	                return false;
+	            })
+	        }
+	          
+	        _DROP(tableName);
+	    }
+	}
+})();
+
 var Main = (function(){
 
 	var $ = function(name){
@@ -66,29 +371,63 @@ var Main = (function(){
 	var Score = {
 		key: "score",
 		bestKey: "best",
+		dbName: "js_db",
+		tableName: "js_table",
 		add: function(){
-			var curScore = window.localStorage.getItem(this.key);
-			var nowScore = parseInt(curScore)+1;
-			$("score").innerHTML = nowScore;
-			window.localStorage.setItem(this.key, nowScore);
-			//更新最高分数
-			var bestScore = parseInt($("best-val").innerHTML);
-			if(nowScore > bestScore){
-				$("best-val").innerHTML = nowScore;
-				window.localStorage.setItem(this.bestKey, nowScore);
-			}
+			var _this = this;
+			db.dbFindAll(_this.tableName, function(result){
+				var fieldItem = {};
+				var curScore = result.rows.item(0).score;
+				var nowScore = parseInt(curScore)+1;
+				$("score").innerHTML = nowScore;
+
+				fieldItem[_this.key] = nowScore;
+				fieldItem[_this.bestKey] = result.rows.item(0).best;
+
+				//更新最高分数
+				var bestScore = parseInt($("best-val").innerHTML);
+				if(nowScore > bestScore){
+					fieldItem[_this.bestKey] = nowScore;
+					$("best-val").innerHTML = nowScore;
+				}
+
+				db.dbUpdate(_this.tableName, fieldItem, null, function(result){
+					console.log(result);
+				});
+			}, function(err){
+			});
+
+			
 		},
 		clear: function(){
-			window.localStorage.setItem(this.key, 0);
+			var _this = this;
+			var fieldItem = {};
+			fieldItem[_this.key] = 0;
+
+			db.dbUpdate(_this.tableName, fieldItem, null, function(result){
+				console.log(result);
+			});
 			$("score").innerHTML = 0;
 		},
 		init: function(){
-			var curScore = window.localStorage.getItem(this.key) || 0;
-			var curBest = window.localStorage.getItem(this.bestKey) || 0;
-			if(typeof(curScore) != "number") curScore = 0;
-			if(typeof(curBest) != "number") curBest = 0;
-			$("score").innerHTML = curScore;
-			$("best-val").innerHTML = curBest;
+			var _this = this;
+
+			db.dbConnect(_this.dbName);
+
+			var fieldItem = {};
+			fieldItem[_this.key] = 0;
+			fieldItem[this.bestKey] = 0;
+
+			db.dbFindAll(_this.tableName, function(result){
+				$("score").innerHTML = result.rows.item(0).score;
+				$("best-val").innerHTML = result.rows.item(0).best;
+			}, function(err){
+				db.dbDefineTable(_this.tableName, fieldItem);
+				db.dbInsert(_this.tableName, fieldItem, null, function(result){
+				});
+			});
+
+			
 		}
 	}
 
@@ -180,10 +519,6 @@ var Main = (function(){
 	function right(){
 		playAudio("audio/right.mp3");
 		Score.add();
-		/*addClass($round, "right");
-		setTimeout(function(){
-			removeClass($round, "right");
-		}, 100);*/
 	}
 
 	function err(){
@@ -279,7 +614,7 @@ var Main = (function(){
 		document.addEventListener('touchstart',function(){},false);
 		setVal();
 		bind();
-		preload(["audio/err.mp3","audio/right.mp3"]);
+		//preload(["audio/err.mp3","audio/right.mp3"]);
 		Score.init();
 	}
 	return {

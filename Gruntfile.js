@@ -26,6 +26,15 @@ module.exports = function(grunt) {
 				}
 			}
 		},
+		connect: {
+		  	server: {
+		    	options: {
+					port: 4000,
+					base: 'build',
+					hostname: '*'
+		    	}
+		  	}
+		},
 		copy: {
 		  	main: {
 		  		expand: true,
@@ -50,8 +59,9 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-less');
 	grunt.loadNpmTasks('grunt-contrib-copy');
+	grunt.loadNpmTasks('grunt-contrib-connect');
 
 	// 自定义任务
 	grunt.registerTask('default', ['copy:main','uglify:dev','less:development']);
-	grunt.registerTask('dev', ['copy:main','uglify:dev','less:development','watch']);
+	grunt.registerTask('dev', ['copy:main','uglify:dev','less:development','connect:server','watch']);
 };
